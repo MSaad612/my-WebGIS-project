@@ -1,0 +1,921 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Islamabad WebGIS Navigation Dashboard</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+ rel="stylesheet">
+
+<style>
+:root {
+  --navy: #14263d;
+  --blue: #2563eb;
+  --teal: #0d9488;
+  --light: #f3f6fb;
+  --muted: #718096;
+  --border: #e5eaf2;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', Arial, sans-serif;
+  background: var(--light);
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+header {
+  min-height: 82px;
+  background: linear-gradient(110deg, #14263d, #1e4771);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 26px;
+  box-shadow: 0 5px 18px #172b4d20;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.brand-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #ffffff1b;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+}
+
+header h1 {
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+header p {
+  color: #d2e3f7;
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.header-tag {
+  background: #ffffff18;
+  border: 1px solid #ffffff40;
+  padding: 9px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.dashboard {
+  max-width: 1600px;
+  margin: auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 260px minmax(300px, 1fr) 245px;
+  gap: 18px;
+  min-height: calc(100vh - 82px);
+}
+
+.panel, .map-panel {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 5px 22px #14263d08;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.panel {
+  padding: 20px;
+}
+
+.panel-heading {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 7px;
+}
+
+.panel-subtitle {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: #8995a8;
+  font-weight: 800;
+  margin: 22px 0 10px;
+}
+
+.location-card {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 11px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: .2s ease;
+  color: #26374b;
+}
+
+.location-card:hover {
+  border-color: #8cb4ff;
+  background: #f5f9ff;
+  transform: translateY(-1px);
+}
+
+.location-card.active {
+  background: #edf4ff;
+  border-color: #7aa7ff;
+}
+
+.location-icon {
+  flex-shrink: 0;
+  width: 39px;
+  height: 39px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  background: #e7efff;
+}
+
+.location-name {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.location-type {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.primary-btn, .secondary-btn {
+  border: 0;
+  border-radius: 11px;
+  padding: 12px 13px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.primary-btn {
+  background: var(--blue);
+  color: white;
+  width: 100%;
+  box-shadow: 0 5px 12px #2563eb24;
+}
+
+.primary-btn:hover {
+  background: #1d4ed8;
+}
+
+.secondary-btn {
+  background: #edf2f8;
+  color: #334155;
+  width: 100%;
+  margin-top: 9px;
+}
+
+.secondary-btn:hover {
+  background: #e0e8f3;
+}
+
+.map-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 650px;
+}
+
+.map-toolbar {
+  padding: 17px 19px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.map-toolbar h2 {
+  font-size: 15px;
+}
+
+.map-toolbar p {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #e9f9f1;
+  color: #16834b;
+  border-radius: 30px;
+  padding: 8px 10px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.live-dot {
+  height: 7px;
+  width: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+#map {
+  flex: 1;
+  min-height: 520px;
+  width: 100%;
+  background: #e7edf4;
+}
+
+.map-footer {
+  padding: 11px 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.status-box {
+  margin-top: 13px;
+  background: #f2f7ff;
+  border: 1px solid #dce9ff;
+  color: #35547e;
+  padding: 12px;
+  border-radius: 11px;
+  font-size: 11px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 13px;
+}
+
+.metric {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 10px;
+  background: #fbfcfe;
+}
+
+.metric-icon {
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+
+.metric-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+
+.profile-card {
+  background: linear-gradient(145deg, #edf4ff, #f6f8ff);
+  border: 1px solid #dce7fb;
+  padding: 16px 12px;
+  border-radius: 14px;
+  text-align: center;
+  margin-top: 18px;
+}
+
+.avatar {
+  margin: 0 auto 11px;
+  width: 60px;
+  height: 60px;
+  border-radius: 19px;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #2563eb, #0d9488);
+}
+
+.profile-card h3 {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.profile-card p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  margin-top: 5px;
+}
+
+.info-row {
+  border-bottom: 1px solid var(--border);
+  padding: 13px 0;
+}
+
+.info-row:last-child {
+  border-bottom: 0;
+}
+
+.info-label {
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 5px;
+}
+
+.info-value {
+  font-size: 12px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  margin: 11px 0;
+  color: #526176;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+footer {
+  text-align: center;
+  padding: 12px;
+  color: #8390a3;
+  font-size: 10px;
+}
+
+@media (max-width: 1100px) {
+  .dashboard {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+  .right-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  header {
+    align-items: flex-start;
+    padding: 15px;
+  }
+  header h1 {
+    font-size: 16px;
+  }
+  .header-tag {
+    font-size: 10px;
+  }
+  .dashboard {
+    padding: 12px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .right-panel {
+    grid-column: auto;
+  }
+  .map-panel {
+    min-height: 570px;
+  }
+  #map {
+    min-height: 470px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">🧭</div>
+    <div>
+      <h1>Islamabad Navigation Dashboard</h1>
+      <p>Interactive WebGIS • Location Search & Route Planning</p>
+    </div>
+  </div>
+  <div class="header-tag">WEBGIS LAB 03</div>
+</header>
+
+<main class="dashboard">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="panel">
+    <h2 class="panel-heading">Explore Islamabad</h2>
+    <p class="panel-subtitle">
+      Select a destination to display its marker and calculate a route
+      from your current location.
+    </p>
+
+    <div class="section-label">AVAILABLE DESTINATIONS</div>
+
+    <button class="location-card active"
+      id="place0" onclick="selectLocation(0)">
+      <div class="location-icon">🕌</div>
+      <div>
+        <div class="location-name">Faisal Mosque</div>
+        <div class="location-type">Religious landmark</div>
+      </div>
+    </button>
+
+    <button class="location-card"
+      id="place1" onclick="selectLocation(1)">
+      <div class="location-icon">🏛️</div>
+      <div>
+        <div class="location-name">Pakistan Monument</div>
+        <div class="location-type">National monument</div>
+      </div>
+    </button>
+
+    <div class="section-label">NAVIGATION</div>
+
+    <button class="primary-btn" onclick="findMyLocation()">
+      ◎ Use My Current Location
+    </button>
+
+    <button class="secondary-btn" onclick="calculateRoute()">
+      ↗ Calculate Route
+    </button>
+
+    <div id="status" class="status-box" aria-live="polite">
+      Allow location access, then select a destination to calculate
+      your route.
+    </div>
+
+    <div class="section-label">ROUTE SUMMARY</div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-icon">📍</div>
+        <div class="metric-value" id="distance">--</div>
+        <div class="metric-label">Distance</div>
+      </div>
+      <div class="metric">
+        <div class="metric-icon">⏱️</div>
+        <div class="metric-value" id="duration">--</div>
+        <div class="metric-label">Est. driving time</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER MAP -->
+  <section class="map-panel">
+    <div class="map-toolbar">
+      <div>
+        <h2>Live Navigation Map</h2>
+        <p>Islamabad Capital Territory, Pakistan</p>
+      </div>
+      <div class="live-pill">
+        <span class="live-dot"></span>
+        INTERACTIVE MAP
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div class="map-footer">
+      <span>Basemap: OpenStreetMap</span>
+      <span>Routing: OSRM demo service</span>
+    </div>
+  </section>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="panel right-panel">
+    <h2 class="panel-heading">Student Profile</h2>
+    <p class="panel-subtitle">
+      WebGIS Development
+    </p>
+
+    <div class="profile-card">
+      <div class="avatar" id="avatar">MS</div>
+      <h3 id="studentDisplay">Your Name</h3>
+      <p>BS Geo-Informatics Student<br>
+      PMAS-Arid Agriculture University, Rawalpindi</p>
+    </div>
+
+    <div class="section-label">STUDENT DETAILS</div>
+
+    <div class="info-row">
+      <div class="info-label">Student Name</div>
+      <div class="info-value" id="nameDetail">Your Name</div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-label">ARID Registration Number</div>
+      <div class="info-value" id="aridDetail">Enter Your ARID Number</div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-label">Assigned Study Area</div>
+      <div class="info-value">Islamabad, Pakistan</div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-label">Practical</div>
+      <div class="info-value">Lab 03 — WebGIS Navigation</div>
+    </div>
+
+    <div class="section-label">MAP LEGEND</div>
+
+    <div class="legend-item">
+      <span class="legend-dot" style="background:#2563eb"></span>
+      Selected destination
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot" style="background:#16a34a"></span>
+      Your current location
+    </div>
+    <div class="legend-item">
+      <span class="legend-dot" style="background:#8b5cf6"></span>
+      Calculated route
+    </div>
+
+    <div class="status-box">
+      <strong>How to use</strong><br>
+      1. Allow location permission.<br>
+      2. Select a destination.<br>
+      3. View the route, distance and estimated driving time.
+    </div>
+  </aside>
+
+</main>
+
+<footer>
+  WebGIS Development — Lab 03 | Interactive WebGIS Navigation Dashboard
+</footer>
+
+<!-- Leaflet JavaScript -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// ===========================================
+// 1. STUDENT DETAILS — EDIT THESE VALUES
+// ===========================================
+
+const STUDENT_NAME = "Muhammad Saad";
+const ARID_NUMBER = "24-ARID-2227";
+
+// ===========================================
+// 2. DESTINATION DATA
+// Approximate coordinates for demonstration
+// ===========================================
+
+const locations = [
+  {
+    name: "Faisal Mosque",
+    type: "Religious landmark",
+    lat: 33.7294,
+    lng: 73.0376
+  },
+  {
+    name: "Pakistan Monument",
+    type: "National monument",
+    lat: 33.6938,
+    lng: 73.0682
+  }
+];
+
+// ===========================================
+// 3. INITIALIZE THE LEAFLET MAP
+// ===========================================
+
+const map = L.map("map").setView([33.7077, 73.0551], 12);
+
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }
+).addTo(map);
+
+// ===========================================
+// 4. CREATE DESTINATION MARKERS
+// ===========================================
+
+const destinationMarkers = locations.map((place, index) => {
+  const marker = L.marker([place.lat, place.lng]).addTo(map);
+
+  marker.bindPopup(
+    `<b>${place.name}</b><br>${place.type}<br>` +
+    `Latitude: ${place.lat}<br>Longitude: ${place.lng}`
+  );
+
+  marker.on("click", () => {
+    selectLocation(index);
+  });
+
+  return marker;
+});
+
+// ===========================================
+// 5. STATE VARIABLES
+// ===========================================
+
+let selectedIndex = 0;
+let currentPosition = null;
+let currentMarker = null;
+let accuracyCircle = null;
+let routeLayer = null;
+let locationRequestId = 0;
+
+// ===========================================
+// 6. DISPLAY STUDENT INFORMATION
+// ===========================================
+
+document.getElementById("studentDisplay").textContent = STUDENT_NAME;
+document.getElementById("nameDetail").textContent = STUDENT_NAME;
+document.getElementById("aridDetail").textContent = ARID_NUMBER;
+
+const initials = STUDENT_NAME
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map(word => word[0].toUpperCase())
+  .join("");
+
+document.getElementById("avatar").textContent = initials || "ST";
+
+// ===========================================
+// 7. STATUS MESSAGE
+// ===========================================
+
+function setStatus(message) {
+  document.getElementById("status").textContent = message;
+}
+
+// ===========================================
+// 8. SELECT A DESTINATION
+// ===========================================
+
+function selectLocation(index) {
+  selectedIndex = index;
+
+  document.querySelectorAll(".location-card").forEach((button, i) => {
+    button.classList.toggle("active", i === index);
+  });
+
+  const place = locations[index];
+
+  map.flyTo([place.lat, place.lng], 14, {
+    duration: 0.8
+  });
+
+  destinationMarkers[index].openPopup();
+
+  setStatus(
+    "Selected: " + place.name +
+    ". Get your current location and calculate the route."
+  );
+
+  // Recalculate if the user already has a location.
+  if (currentPosition) {
+    calculateRoute();
+  }
+}
+
+// ===========================================
+// 9. GET CURRENT BROWSER LOCATION
+// ===========================================
+
+function findMyLocation() {
+  if (!navigator.geolocation) {
+    setStatus("Your browser does not support geolocation.");
+    return;
+  }
+
+  const requestId = ++locationRequestId;
+
+  setStatus("Requesting your current location. Please allow access.");
+
+  navigator.geolocation.getCurrentPosition(
+    function(position) {
+      // Ignore an older request if a newer one was made.
+      if (requestId !== locationRequestId) return;
+
+      currentPosition = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy
+      };
+      
+      console.log("Latitude:", position.coords.latitude);
+      console.log("Longitude:", position.coords.longitude);
+      console.log("Accuracy (metres):", position.coords.accuracy);
+
+      if (currentMarker) {
+        map.removeLayer(currentMarker);
+      }
+
+      if (accuracyCircle) {
+        map.removeLayer(accuracyCircle);
+      }
+
+      currentMarker = L.marker([
+        currentPosition.lat,
+        currentPosition.lng
+      ]).addTo(map);
+
+      currentMarker.bindPopup(
+        "<b>Your Current Location</b><br>" +
+        "Accuracy: approximately " +
+        Math.round(currentPosition.accuracy) + " metres"
+      );
+
+      accuracyCircle = L.circle(
+        [currentPosition.lat, currentPosition.lng],
+        {
+          radius: currentPosition.accuracy,
+          color: "#16a34a",
+          fillColor: "#16a34a",
+          fillOpacity: 0.10,
+          weight: 1
+        }
+      ).addTo(map);
+
+      map.flyTo(
+        [currentPosition.lat, currentPosition.lng],
+        14
+      );
+
+      currentMarker.openPopup();
+
+      setStatus(
+        "Current location obtained. Calculating your route..."
+      );
+
+      calculateRoute();
+    },
+
+    function(error) {
+      if (requestId !== locationRequestId) return;
+
+      const messages = {
+        1: "Location permission was denied. Allow location access in your browser and try again.",
+        2: "Your location is currently unavailable. Check your device location settings or try again.",
+        3: "The location request timed out. Please try again."
+      };
+
+      setStatus(
+        messages[error.code] ||
+        "Unable to obtain your location."
+      );
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0
+    }
+  );
+}
+
+// ===========================================
+// 10. CALCULATE A DRIVING ROUTE USING OSRM
+// ===========================================
+
+async function calculateRoute() {
+  if (!currentPosition) {
+    setStatus(
+      "First click 'Use My Current Location' and allow browser location access."
+    );
+    return;
+  }
+
+  const place = locations[selectedIndex];
+
+  setStatus("Requesting the driving route...");
+
+  document.getElementById("distance").textContent = "...";
+  document.getElementById("duration").textContent = "...";
+
+  // OSRM expects longitude,latitude order.
+  const url =
+    "https://router.project-osrm.org/route/v1/driving/" +
+    currentPosition.lng + "," + currentPosition.lat + ";" +
+    place.lng + "," + place.lat +
+    "?overview=full&geometries=geojson&steps=false";
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error("Routing service returned HTTP " + response.status);
+    }
+
+    const data = await response.json();
+
+    if (data.code !== "Ok" || !data.routes || !data.routes.length) {
+      throw new Error("No driving route was returned.");
+    }
+
+    const route = data.routes[0];
+
+    if (routeLayer) {
+      map.removeLayer(routeLayer);
+    }
+
+    // GeoJSON coordinates are [longitude, latitude].
+    routeLayer = L.geoJSON(route.geometry, {
+      style: {
+        color: "#8b5cf6",
+        weight: 6,
+        opacity: 0.85
+      }
+    }).addTo(map);
+
+    // Zoom to show the entire route.
+    map.fitBounds(routeLayer.getBounds(), {
+      padding: [35, 35]
+    });
+
+    const distanceKm = route.distance / 1000;
+    const durationMinutes = Math.round(route.duration / 60);
+
+    document.getElementById("distance").textContent =
+      distanceKm.toFixed(2) + " km";
+
+    document.getElementById("duration").textContent =
+      durationMinutes >= 60
+        ? Math.floor(durationMinutes / 60) + " h " +
+          (durationMinutes % 60) + " min"
+        : durationMinutes + " min";
+
+    setStatus(
+      "Route found to " + place.name +
+      ". Distance: " + distanceKm.toFixed(2) +
+      " km. Estimated driving time: " +
+      durationMinutes + " minutes."
+    );
+
+  } catch (error) {
+    console.error("Routing error:", error);
+
+    document.getElementById("distance").textContent = "--";
+    document.getElementById("duration").textContent = "--";
+
+    setStatus(
+      "Could not calculate the route. Check your internet connection " +
+      "and try again. The public routing service may be busy or unavailable."
+    );
+  }
+}
+
+// ===========================================
+// 11. INITIAL MAP DISPLAY
+// ===========================================
+
+selectLocation(0);
+</script>
+
+</body>
+</html>
